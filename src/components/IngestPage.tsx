@@ -45,7 +45,7 @@ const IngestPage: React.FC<IngestPageProps> = ({ sidebarOpen }) => {
         });
         setIsLoading(false);
       }, 2000);
-    } catch (error) {
+    } catch {
       setTimeout(() => {
         setResult({
           success: false,

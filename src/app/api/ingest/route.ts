@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ZyteService } from "@/services/zyteService";
+import { ZyteService, ScrapType } from "@/services/zyteService";
 import { prisma } from "@/lib/prisma";
 import { getCurrentUser } from "@/lib/auth";
 
@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     const user = await getCurrentUser();
     const body = await request.json();
     const url = body.data
-    const scrapeType = 'product'
+    const scrapeType = ScrapType.PRODUCT
     if (!url || !scrapeType) {
       return NextResponse.json(
         { error: "URL and scrapType are required" },

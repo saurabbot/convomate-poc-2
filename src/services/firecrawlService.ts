@@ -35,6 +35,8 @@ const StructuredDataSchema = z.object({
   }),
 });
 
+export { StructuredDataSchema };
+
 type StructuredData = z.infer<typeof StructuredDataSchema>;
 type MediaItem = z.infer<typeof MediaSchema>;
 
@@ -156,7 +158,7 @@ export class FirecrawlService {
 
       const batchResults = await Promise.all(batchPromises);
       batchResults.forEach((result) => {
-        if (result.success) {
+        if (result.success && result.data) {
           results.push(result.data);
         }
       });
@@ -181,7 +183,7 @@ export class FirecrawlService {
       url,
       formats: [{
         type: 'json',
-        schema: this.zodToJsonSchema(schema),
+        schema: this.zodToJsonSchema(),
         prompt: prompt || 'Extract the data according to the provided schema',
       }],
       onlyMainContent: true,
@@ -201,7 +203,7 @@ export class FirecrawlService {
     }
   }
 
-  private async makeRequest(endpoint: string, payload: Record<string, any>): Promise<FirecrawlResponse> {
+  private async makeRequest(endpoint: string, payload: Record<string, unknown>): Promise<FirecrawlResponse> {
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
       method: 'POST',
       headers: {
@@ -226,7 +228,7 @@ export class FirecrawlService {
 
     const { data } = response;
     
-    const textContent = this.extractTextContent(data.markdown || '', data.html || '');
+    const textContent = this.extractTextContent(data.markdown || '');
     
     const media = this.extractMediaItems(data.json, data.html || '');
     
@@ -240,13 +242,18 @@ export class FirecrawlService {
     };
 
     return {
-      textContent,
+      textContent: textContent || {
+        title: '',
+        headings: [],
+        paragraphs: [],
+        links: [],
+      },
       media,
       metadata,
     };
   }
 
-  private extractTextContent(markdown: string, html: string): typeof TextContentSchema {
+  private extractTextContent(markdown: string): z.infer<typeof TextContentSchema> {
     const titleMatch = markdown.match(/^# (.+)$/m);
     const title = titleMatch ? titleMatch[1] : '';
 
@@ -273,11 +280,16 @@ export class FirecrawlService {
     };
   }
 
-  private extractMediaItems(jsonData: any, html: string): MediaItem[] {
+  private extractMediaItems(jsonData: unknown, html: string): MediaItem[] {
     const media: MediaItem[] = [];
 
-    if (jsonData && jsonData.media) {
-      media.push(...jsonData.media);
+    if (jsonData && typeof jsonData === 'object' && jsonData !== null && 'media' in jsonData) {
+      const mediaData = (jsonData as { media: unknown }).media;
+      if (Array.isArray(mediaData)) {
+        media.push(...mediaData.filter((item): item is MediaItem => 
+          typeof item === 'object' && item !== null && 'url' in item && 'type' in item
+        ));
+      }
     }
 
     const imgMatches = [...html.matchAll(/<img[^>]+src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*>/gi)];
@@ -328,8 +340,7 @@ export class FirecrawlService {
     }
   }
 
-  private zodToJsonSchema(schema: z.ZodSchema<any>): any {
-
+  private zodToJsonSchema(): Record<string, unknown> {
     return {
       type: 'object',
       properties: {},
@@ -367,7 +378,7 @@ export async function example() {
     console.log('Found media items:', result.media.length);
     
     const urls = ['https://example.com', 'https://another-site.com'];
-    const results = await firecrawl.scrapeMultipleUrls(urls);
+    await firecrawl.scrapeMultipleUrls(urls);
     
     const customSchema = z.object({
       productName: z.string(),
@@ -375,7 +386,7 @@ export async function example() {
       images: z.array(z.string()),
     });
     
-    const product = await firecrawl.extractWithSchema(
+    await firecrawl.extractWithSchema(
       'https://ecommerce-site.com/product',
       customSchema,
       'Extract product information including name, price, and image URLs'

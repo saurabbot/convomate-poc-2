@@ -32,7 +32,8 @@ export default function SignUpPage() {
       } else {
         setError(result.error || 'An error occurred during sign up')
       }
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error(error)
       setError('Network error. Please try again.')
     } finally {
       setLoading(false)

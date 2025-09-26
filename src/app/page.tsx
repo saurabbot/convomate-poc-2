@@ -9,7 +9,7 @@ import IngestPage from '@/components/IngestPage';
 export default function Home() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [activeItem, setActiveItem] = useState('Overview');
-  const { user, loading, logout } = useUser();
+  const { user } = useUser();
   console.log(user);
   const pageVariants = {
     initial: { opacity: 1, x: 0 },

@@ -6,7 +6,7 @@ import { Eye, EyeOff, Mail, Lock, User } from 'lucide-react'
 
 interface AuthFormProps {
   mode: 'signin' | 'signup'
-  onSubmit: (data: any) => Promise<void>
+  onSubmit: (data: { name: string; email: string; password: string }) => Promise<void>
   loading: boolean
 }
 
