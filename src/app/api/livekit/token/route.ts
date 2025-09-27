@@ -32,19 +32,21 @@ export async function POST(request: NextRequest) {
     }
 
     const roomService = new RoomServiceClient(serverUrl, apiKey, apiSecret);
-    
+
     try {
-      await roomService.createRoom({ 
-        name: roomName, 
-        emptyTimeout: 60 * 10 // Room expires after 10 minutes if empty
+      await roomService.createRoom({
+        name: roomName,
+        emptyTimeout: 60 * 10, // Room expires after 10 minutes if empty
       });
-      console.log(`Room ${roomName} created successfully`);
-    } catch (e: any) {
-      if (e.message.includes('already exists')) {
-        console.log(`Room ${roomName} already exists`);
+    } catch (e: unknown) {
+      const error = e as { message: string };
+      if (error.message.includes("already exists")) {
       } else {
-        console.error('Error creating room:', e);
-        return NextResponse.json({ error: 'Failed to create room' }, { status: 500 });
+        console.error("Error creating room:", e);
+        return NextResponse.json(
+          { error: "Failed to create room" },
+          { status: 500 }
+        );
       }
     }
 
