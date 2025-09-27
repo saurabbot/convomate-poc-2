@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
         price,
         createdBy: {
           connect: {
-            id: user?.userId,
+            id: user?.id,
           },
         },
         mainImage: mainImage?.url || "",

@@ -1,15 +1,23 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 import AuthForm from '@/components/AuthForm'
+import { useUser } from '@/hooks/useUser'
 
 export default function SignInPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const router = useRouter()
+  const { user, loading: authLoading } = useUser()
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/')
+    }
+  }, [user, authLoading, router])
 
   const handleSignIn = async (data: { email: string; password: string }) => {
     setLoading(true)
@@ -37,6 +45,36 @@ export default function SignInPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <div className="w-16 h-16 bg-black rounded-full flex items-center justify-center mb-4 mx-auto">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-8 h-8 border-2 border-white border-t-transparent rounded-full"
+            />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Loading...
+          </h2>
+          <p className="text-gray-600">
+            Checking authentication
+          </p>
+        </motion.div>
+      </div>
+    )
+  }
+
+  if (user) {
+    return null
   }
 
   return (

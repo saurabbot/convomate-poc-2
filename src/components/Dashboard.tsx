@@ -1,49 +1,128 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { 
-  Users, 
-  DollarSign, 
-  TrendingUp, 
-  Activity,
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import {
+  FileText,
+  Image,
+  Video,
+  Link as LinkIcon,
   Bell,
   Search,
-  MoreVertical,
-  Monitor,
-  Smartphone,
-  Tablet
-} from 'lucide-react';
-import { analyticsData } from '@/lib/mockData';
-import MetricCard from './MetricCard';
-import { Card } from './ui/card';
+  Calendar,
+  ExternalLink,
+  Bot,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import { generateRoomHash } from "@/lib/utils";
 
 interface DashboardProps {
   sidebarOpen: boolean;
 }
 
+interface ContentItem {
+  id: string;
+  name: string;
+  description: string | null;
+  url: string;
+  price: string | null;
+  mainImage: string | null;
+  createdAt: string;
+  images: Array<{ id: string; url: string }>;
+  videos: Array<{ id: string; url: string }>;
+  _count: {
+    images: number;
+    videos: number;
+  };
+}
+
+interface ContentResponse {
+  success: boolean;
+  data: ContentItem[];
+  pagination: {
+    page: number;
+    limit: number;
+    totalCount: number;
+    totalPages: number;
+    hasNext: boolean;
+    hasPrev: boolean;
+  };
+}
+
 const Dashboard: React.FC<DashboardProps> = ({ sidebarOpen }) => {
-  const [selectedPeriod, setSelectedPeriod] = useState('30d');
-  
+  const [content, setContent] = useState<ContentItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [stats, setStats] = useState({
+    totalItems: 0,
+    totalImages: 0,
+    totalVideos: 0,
+    totalUrls: 0,
+  });
+  const router = useRouter();
   const containerVariants = {
-    hidden: { opacity: 1 },
+    hidden: { opacity: 0 },
     visible: {
-      opacity: 1
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.6,
+      },
+    },
+  };
+
+  useEffect(() => {
+    fetchContent();
+  }, [searchTerm]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchContent = async () => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (searchTerm) params.append("search", searchTerm);
+      params.append("limit", "12");
+
+      const response = await fetch(`/api/content?${params}`);
+      const result: ContentResponse = await response.json();
+
+      if (result.success) {
+        setContent(result.data);
+        setStats({
+          totalItems: result.pagination.totalCount,
+          totalImages: result.data.reduce(
+            (sum, item) => sum + item._count.images,
+            0
+          ),
+          totalVideos: result.data.reduce(
+            (sum, item) => sum + item._count.videos,
+            0
+          ),
+          totalUrls: result.data.length,
+        });
+      }
+    } catch (error) {
+      console.error("Error fetching content:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const headerVariants = {
-    hidden: { opacity: 1, y: 0 },
-    visible: { 
-      opacity: 1, 
-      y: 0
-    }
-  };
-
-  const deviceIcons = {
-    Desktop: Monitor,
-    Mobile: Smartphone,
-    Tablet: Tablet
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
   };
 
   return (
@@ -53,28 +132,34 @@ const Dashboard: React.FC<DashboardProps> = ({ sidebarOpen }) => {
       animate="visible"
       className="min-h-screen bg-gray-50 transition-all duration-300 p-8"
       style={{
-        marginLeft: sidebarOpen ? '280px' : '80px'
+        marginLeft: sidebarOpen ? "280px" : "80px",
       }}
     >
-      <motion.div 
-        variants={headerVariants}
+      <motion.div
+        variants={itemVariants}
         className="flex items-center justify-between mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Analytics Dashboard</h1>
-          <p className="text-gray-600">Welcome back! Here&apos;s what&apos;s happening with your analytics.</p>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            Content Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Manage and review your scraped content.
+          </p>
         </div>
-        
+
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2 bg-white rounded-lg border border-gray-200 px-3 py-2">
             <Search size={16} className="text-gray-400" />
-            <input 
-              type="text" 
-              placeholder="Search..." 
+            <input
+              type="text"
+              placeholder="Search content..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
               className="outline-none text-sm w-40"
             />
           </div>
-          
+
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -86,206 +171,216 @@ const Dashboard: React.FC<DashboardProps> = ({ sidebarOpen }) => {
       </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <MetricCard
-          title="Total Users"
-          value={analyticsData.overview.totalUsers.toLocaleString()}
-          change={12.5}
-          trend="up"
-          icon={Users}
-          delay={0}
-        />
-        <MetricCard
-          title="Revenue"
-          value={`$${analyticsData.overview.totalRevenue.toLocaleString()}`}
-          change={8.2}
-          trend="up"
-          icon={DollarSign}
-          delay={0.1}
-        />
-        <MetricCard
-          title="Conversion Rate"
-          value={`${analyticsData.overview.conversionRate}%`}
-          change={-2.1}
-          trend="down"
-          icon={TrendingUp}
-          delay={0.2}
-        />
-        <MetricCard
-          title="Bounce Rate"
-          value={`${analyticsData.overview.bounceRate}%`}
-          change={-5.3}
-          trend="up"
-          icon={Activity}
-          delay={0.3}
-        />
+        <motion.div
+          variants={itemVariants}
+          whileHover={{ scale: 1.02 }}
+          className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-all duration-300"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Items</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.totalItems}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+              <FileText size={24} className="text-white" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          whileHover={{ scale: 1.02 }}
+          className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-all duration-300"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Images</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.totalImages}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+              <Image
+                size={24}
+                className="text-white"
+                aria-label="Images icon"
+              />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          whileHover={{ scale: 1.02 }}
+          className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-all duration-300"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Total Videos</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.totalVideos}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+              <Video size={24} className="text-white" />
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div
+          variants={itemVariants}
+          whileHover={{ scale: 1.02 }}
+          className="bg-white rounded-lg p-6 border border-gray-200 hover:shadow-lg transition-all duration-300"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">URLs Scraped</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {stats.totalUrls}
+              </p>
+            </div>
+            <div className="w-12 h-12 bg-black rounded-lg flex items-center justify-center">
+              <LinkIcon size={24} className="text-white" />
+            </div>
+          </div>
+        </motion.div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      {loading ? (
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="lg:col-span-2"
+          variants={itemVariants}
+          className="flex items-center justify-center py-12"
         >
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Growth Overview</h3>
-              <div className="flex space-x-2">
-                {['7d', '30d', '90d'].map((period) => (
-                  <motion.button
-                    key={period}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => setSelectedPeriod(period)}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
-                      selectedPeriod === period
-                        ? 'bg-black text-white'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                    }`}
-                  >
-                    {period}
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-            
-            <div className="h-64 flex items-end justify-between space-x-2">
-              {analyticsData.overview.growthData.map((data, index) => (
-                <motion.div
-                  key={data.month}
-                  initial={{ height: 0 }}
-                  animate={{ height: `${(data.users / 25000) * 100}%` }}
-                  transition={{ delay: 0.5 + index * 0.1, duration: 0.8 }}
-                  className="flex-1 bg-gradient-to-t from-black to-gray-600 rounded-t-sm min-h-8"
+          <div className="text-center">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-12 h-12 border-4 border-gray-200 border-t-black rounded-full mx-auto mb-4"
+            />
+            <p className="text-gray-600">Loading content...</p>
+          </div>
+        </motion.div>
+      ) : (
+        <motion.div
+          variants={itemVariants}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+        >
+          {content.map((item, index) => (
+            <motion.div
+              key={item.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.1 }}
+              whileHover={{ scale: 1.02, y: -5 }}
+              className="bg-white rounded-lg border border-gray-200 overflow-hidden hover:shadow-lg transition-all duration-300"
+            >
+              <div className="h-48 bg-gray-100 relative overflow-hidden">
+                <img
+                  src={
+                    item?.mainImage ||
+                    "https://images.unsplash.com/photo-1758654307553-f067f0367f13?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxmZWF0dXJlZC1waG90b3MtZmVlZHw3fHx8ZW58MHx8fHx8"
+                  }
+                  alt={item.name}
+                  className="object-cover w-full h-full"
                 />
-              ))}
-            </div>
-            
-            <div className="flex justify-between mt-2 text-xs text-gray-500">
-              {analyticsData.overview.growthData.map((data) => (
-                <span key={data.month}>{data.month}</span>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Device Usage</h3>
-            <div className="space-y-4">
-              {analyticsData.deviceStats.map((device, index) => {
-                const IconComponent = deviceIcons[device.device as keyof typeof deviceIcons];
-                return (
-                  <motion.div
-                    key={device.device}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.6 + index * 0.1 }}
-                    className="flex items-center justify-between"
+                <div className="absolute top-3 right-3 flex space-x-2">
+                  {item._count.images > 0 && (
+                    <div className="bg-black bg-opacity-75 text-white px-2 py-1 rounded-full text-xs flex items-center space-x-1">
+                      <Image size={12} aria-label="Images count" />
+                      <span>{item._count.images}</span>
+                    </div>
+                  )}
+                  {item._count.videos > 0 && (
+                    <div className="bg-black bg-opacity-75 text-white px-2 py-1 rounded-full text-xs flex items-center space-x-1">
+                      <Video size={12} aria-label="Videos count" />
+                      <span>{item._count.videos}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-gray-900 line-clamp-2">
+                    {item.name}
+                  </h3>
+                  <motion.a
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    className="text-gray-400 hover:text-gray-600 transition-colors"
                   >
-                    <div className="flex items-center space-x-3">
-                      <IconComponent size={20} className="text-gray-600" />
-                      <span className="font-medium text-gray-900">{device.device}</span>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-semibold text-gray-900">
-                        {device.count.toLocaleString()}
-                      </div>
-                      <div className="text-xs text-gray-500">
-                        {device.percentage}%
-                      </div>
-                    </div>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </Card>
-        </motion.div>
-      </div>
+                    <ExternalLink size={16} />
+                  </motion.a>
+                </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-        >
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-              <MoreVertical size={20} className="text-gray-400" />
-            </div>
-            
-            <div className="space-y-4">
-              {analyticsData.recentActivity.map((activity, index) => (
-                <motion.div
-                  key={activity.id}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.8 + index * 0.1 }}
-                  className="flex items-start space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="w-2 h-2 bg-green-500 rounded-full mt-2"></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900">{activity.user}</p>
-                    <p className="text-sm text-gray-600">{activity.action}</p>
-                    <p className="text-xs text-gray-400 mt-1">{activity.time}</p>
-                  </div>
-                  <span className="text-sm font-semibold text-gray-900">{activity.value}</span>
-                </motion.div>
-              ))}
-            </div>
-          </Card>
-        </motion.div>
+                {item.description && (
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {item.description}
+                  </p>
+                )}
 
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8 }}
-        >
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-900">Top Pages</h3>
-              <MoreVertical size={20} className="text-gray-400" />
-            </div>
-            
-            <div className="space-y-4">
-              {analyticsData.topPages.map((page, index) => (
-                <motion.div
-                  key={page.page}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: 0.9 + index * 0.1 }}
-                  className="flex items-center justify-between"
-                >
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{page.page}</p>
-                    <div className="flex items-center mt-1">
-                      <div className="w-full bg-gray-200 rounded-full h-2 mr-3">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${page.percentage}%` }}
-                          transition={{ delay: 1 + index * 0.1, duration: 0.8 }}
-                          className="bg-black h-2 rounded-full"
-                        />
-                      </div>
-                      <span className="text-xs text-gray-500 whitespace-nowrap">
-                        {page.percentage}%
-                      </span>
-                    </div>
+                <div className="flex items-center justify-between text-sm text-gray-500">
+                  <div className="flex items-center space-x-1">
+                    <Calendar size={14} />
+                    <span>{formatDate(item.createdAt)}</span>
                   </div>
-                  <span className="text-sm font-semibold text-gray-900 ml-4">
-                    {page.views.toLocaleString()}
-                  </span>
-                </motion.div>
-              ))}
-            </div>
-          </Card>
+                  {item.price && (
+                    <span className="font-semibold text-gray-900">
+                      {item.price}
+                    </span>
+                  )}
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full mt-4 flex items-center justify-center bg-black text-white p-2 rounded-lg"
+                  onClick={() => {
+                    const contentId = item.id;
+                    router.push(
+                      `/meeting_room/${generateRoomHash()}?id=${contentId}`
+                    );
+                  }}
+                >
+                  <Bot size={16} className="mr-2" />
+                  Talk to Agent
+                </motion.button>
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
-      </div>
+      )}
+
+      {content.length === 0 && !loading && (
+        <motion.div variants={itemVariants} className="text-center py-12">
+          <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <FileText size={32} className="text-gray-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            No content found
+          </h3>
+          <p className="text-gray-600 mb-4">
+            {searchTerm
+              ? "Try adjusting your search terms"
+              : "Start by ingesting some content from the Ingest page"}
+          </p>
+          {searchTerm && (
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setSearchTerm("")}
+              className="px-4 py-2 bg-black text-white rounded-lg hover:bg-gray-800 transition-colors"
+            >
+              Clear Search
+            </motion.button>
+          )}
+        </motion.div>
+      )}
     </motion.div>
   );
 };

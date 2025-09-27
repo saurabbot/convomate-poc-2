@@ -1,0 +1,281 @@
+/* LiveKit Meeting Room Custom Styles */
+
+.lk-video-conference {
+  height: 100vh;
+  width: 100%;
+  background: #f9fafb;
+}
+
+.lk-grid-layout {
+  height: calc(100vh - 80px);
+  padding: 1rem;
+}
+
+.lk-control-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 80px;
+  background: white;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.lk-participant-tile {
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  overflow: hidden;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.lk-participant-metadata {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.lk-focus-layout {
+  background: #f9fafb;
+}
+
+.lk-focus-layout .lk-participant-tile {
+  border-radius: 16px;
+}
+
+.lk-control-bar button {
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem;
+  margin: 0 0.25rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lk-control-bar button:hover {
+  background: #374151;
+  transform: scale(1.05);
+}
+
+.lk-control-bar button:active {
+  transform: scale(0.95);
+}
+
+.lk-control-bar button[data-lk-muted="true"] {
+  background: black;
+}
+
+.lk-control-bar button[data-lk-muted="true"]:hover {
+  background: black;
+}
+
+.lk-control-bar button[data-lk-enabled="true"] {
+  background: white;
+  color: black;
+}
+
+.lk-control-bar button[data-lk-enabled="true"]:hover {
+  background: white;
+  color: black;
+}
+
+.lk-disconnect-button {
+  background: black !important;
+}
+
+.lk-disconnect-button:hover {
+  background: black !important;
+}
+
+.lk-chat {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.lk-chat-header {
+  background: #f9fafb;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 1rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+.lk-chat-messages {
+  padding: 1rem;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.lk-chat-message {
+  margin-bottom: 0.75rem;
+  padding: 0.5rem;
+  border-radius: 8px;
+  background: #f3f4f6;
+}
+
+.lk-chat-message-own {
+  background: #000000;
+  color: white;
+  margin-left: 2rem;
+}
+
+.lk-chat-input {
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 0.75rem;
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.lk-chat-input:focus {
+  outline: none;
+  border-color: #000000;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.1);
+}
+
+.lk-chat-send-button {
+  background: #000000;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  margin-left: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.lk-chat-send-button:hover {
+  background: #374151;
+}
+
+.lk-participant-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+.lk-participant-metadata-item {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
+.lk-connection-quality {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+}
+
+.lk-connection-quality[data-lk-quality="excellent"] {
+  background: #059669;
+}
+
+.lk-connection-quality[data-lk-quality="good"] {
+  background: #d97706;
+}
+
+.lk-connection-quality[data-lk-quality="poor"] {
+  background: #dc2626;
+}
+
+.lk-media-controls {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.lk-media-controls button {
+  min-width: 48px;
+  min-height: 48px;
+}
+
+.lk-media-controls button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.lk-participant-placeholder {
+  background: #f3f4f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6b7280;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.lk-participant-placeholder svg {
+  width: 48px;
+  height: 48px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .lk-grid-layout {
+    padding: 0.5rem;
+  }
+  
+  .lk-control-bar {
+    height: 60px;
+  }
+  
+  .lk-control-bar button {
+    padding: 0.5rem;
+    margin: 0 0.125rem;
+  }
+  
+  .lk-participant-tile {
+    border-radius: 8px;
+  }
+}
+
+/* Animation for participant tiles */
+.lk-participant-tile {
+  transition: all 0.3s ease;
+}
+
+.lk-participant-tile:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px 0 rgba(0, 0, 0, 0.15);
+}
+
+/* Loading state */
+.lk-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #6b7280;
+}
+
+.lk-loading::after {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e5e7eb;
+  border-top: 2px solid #000000;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 0.5rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
